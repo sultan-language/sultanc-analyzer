@@ -1,0 +1,19 @@
+[package]
+name = "sultanc_analyzer"
+version = "0.21.0"
+description = "The SultanC language server (LSP), built on the compiler's own frontend"
+license = "MIT"
+repository = "https://github.com/sultan-language/sultanc-analyzer"
+readme = "README.md"
+keywords = ["sultanc", "lsp", "language-server", "arabic"]
+
+[lib]
+path = "src"
+
+# The server links the compiler's frontend: the library package `compiler`
+# (compiler/Supax.toml) of the SultanC repository. It follows `main`, where
+# the tooling API the server uses lands first; a release can pin a `tag`.
+# tools/build.sh and tools/dist.sh fetch it; `supax build` needs Supax to find
+# a package in a subdirectory of a git dependency (docs/COMPILER_REQUESTS.md, S1).
+[dependencies]
+compiler = { git = "https://github.com/sultan-language/sultanc", branch = "main" }

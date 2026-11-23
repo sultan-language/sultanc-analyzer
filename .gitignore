@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+/build/
+/dist/
+# Records the local path of ../sultanc/compiler.
+Supax.lock
