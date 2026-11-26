@@ -4,14 +4,13 @@
 
 Editors start `sultanc-analyzer` with no arguments; it speaks LSP over stdin and stdout. Standard output carries only LSP frames; logs go to standard error.
 
-⚠️ **The working directory must be the directory that holds `library/`** — a SultanC checkout, or an unpacked release bundle. The compiler resolves the standard library (`library/core`, `library/alloc`, `library/std`) relative to the working directory. Documents and workspace folders arrive as absolute URIs, so projects can be anywhere.
+The server finds the standard library (`library/core`, `library/alloc`, `library/std`) as the compiler does (`compiler/driver/std_location.sn`):
 
-```sh
-cd /path/to/sultanc && build/sultanc-analyzer                       # a checkout
-cd sultanc-analyzer-0.21.0-arm64-darwin && build/sultanc-analyzer        # a release bundle
-```
+1. `$SULTANC_STD`, the library directory;
+2. `./library` in the working directory;
+3. next to the server: `<bin>/library`, `<bin>/../library` (a checkout's `build/sultanc-analyzer`), `<bin>/../lib/sultanc/library` (the toolchain: `~/.supax/bin/sultanc-analyzer` and `~/.supax/lib/sultanc/library`).
 
-`tools/sultanc-analyzer-editor.sh` does this for editors that cannot set a working directory (`SULTANC_HOME`, optional `SULTANC_ANALYZER`). The VS Code extension does it automatically.
+So an installed server starts from any directory. Documents and workspace folders arrive as absolute URIs, so projects can be anywhere.
 
 ## initializationOptions
 
@@ -32,7 +31,7 @@ The check on save runs the first of:
 
 1. `compilerPath`
 2. `$SULTANC`
-3. `build/sultanc` next to the standard library the server uses (a checkout, or a bundle that includes the compiler)
+3. `build/sultanc` next to the standard library the server uses (a checkout)
 4. `~/.supax/bin/sultanc` (installed by Supax's `tools/install.sh`)
 5. `sultanc` on `PATH`
 

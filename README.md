@@ -33,31 +33,28 @@ The full list of methods, with what each one returns, is in [docs/FEATURES.md](d
 
 ## Install
 
-### VS Code
-
-Install the **SultanC** extension. It is published as platform-specific packages that bundle this server and the standard library it was built with:
-
-| Platform | Package |
-|---|---|
-| Linux x64, Linux arm64 | `linux-x64`, `linux-arm64` |
-| macOS Intel, macOS Apple silicon | `darwin-x64`, `darwin-arm64` |
-| Windows x64, Windows arm64 | `win32-x64`, `win32-arm64` |
-
-VS Code picks the package for your platform. To use another server build, set `sultanc.server.path`.
-
-### Other editors
-
-Download the bundle for your platform from the [releases](https://github.com/sultan-language/sultanc-analyzer/releases) and unpack it:
+The server is part of the SultanC toolchain: it is installed next to the compiler it was built with, and both use the same standard library.
 
 ```
-sultanc-analyzer-<version>-<target>/
-  build/sultanc-analyzer        the server (sultanc-analyzer.exe on Windows)
-  library/                 the standard library it was built against
+~/.supax/bin/sultanc              the compiler
+~/.supax/bin/sultanc-analyzer     this server
+~/.supax/lib/sultanc/library      the standard library
 ```
 
-Start `build/sultanc-analyzer` with the bundle directory as its working directory. Neovim, Helix, Emacs, Sublime Text and Zed setups are in [docs/EDITORS.md](docs/EDITORS.md).
+1. Install the compiler with Supax's installer (`tools/install.sh` in the [Supax](https://github.com/sultan-language/supax) repository). It puts `~/.supax/bin` on `PATH`.
+2. Install the server from the same SultanC checkout:
 
-Running and checking programs needs the SultanC compiler. The server finds it in this order: the `compilerPath` option, `$SULTANC`, `build/sultanc` next to the standard library, `~/.supax/bin/sultanc` (the Supax installer), then `sultanc` on `PATH`.
+   ```sh
+   git clone https://github.com/sultan-language/sultanc-analyzer
+   cd sultanc-analyzer
+   tools/install.sh /path/to/sultanc     # the checkout the compiler was installed from
+   ```
+
+   Without an argument, `tools/install.sh` builds against the compiler sources named in `Supax.toml` (`main` of the compiler repository). Set `SUPAX_HOME` to install somewhere other than `~/.supax`.
+
+Editors then find it on their own: the **SultanC** VS Code extension looks in `~/.supax/bin`, other editors start `sultanc-analyzer` from `PATH` ([docs/EDITORS.md](docs/EDITORS.md)). The server finds its standard library next to itself, as the compiler does, so it runs from any working directory.
+
+Running, checking and testing programs use the compiler: the `compilerPath` option, `$SULTANC`, `~/.supax/bin/sultanc`, then `sultanc` on `PATH`.
 
 ## Build from source
 
@@ -84,7 +81,7 @@ tools/build.sh /path/to/sultanc       # writes /path/to/sultanc/build/sultanc-an
 
 `supax build` will build the same package once Supax resolves a package in a subdirectory of a git dependency (the compiler is `compiler/Supax.toml` in its repository; see [docs/COMPILER_REQUESTS.md](docs/COMPILER_REQUESTS.md), S1).
 
-Release bundles for every supported platform are built with `tools/dist.sh`; the compiler cross-compiles and links each target itself. See [docs/RELEASING.md](docs/RELEASING.md).
+Release archives for every supported platform, laid out as the toolchain prefix, are built with `tools/dist.sh`; the compiler cross-compiles and links each target itself. See [docs/RELEASING.md](docs/RELEASING.md).
 
 ## Configuration
 
@@ -118,9 +115,9 @@ tests/
   integration/           JSON-RPC end-to-end tests and their fixtures
 tools/
   build.sh               build against the compiler's main branch or a local checkout
-  dist.sh                release bundles for every platform
+  dist.sh                release archives for every platform (toolchain layout)
   compiler-source.sh     where the compiler checkout and executable come from
-  sultanc-analyzer-editor.sh  launcher for editors other than VS Code
+  install.sh             build and install into the SultanC toolchain (~/.supax)
   generate_keywords.py   regenerate src/analysis/keywords.sn
 docs/                    reference documentation
 ```
@@ -145,7 +142,7 @@ The suite starts the server, drives every feature over JSON-RPC on the fixtures 
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Modules, analysis sessions, caching, scheduling and cancellation |
 | [EDITORS.md](docs/EDITORS.md) | Setup for Neovim, Helix, Emacs, Sublime Text and Zed |
 | [TESTING.md](docs/TESTING.md) | Running and writing tests |
-| [RELEASING.md](docs/RELEASING.md) | Building bundles and platform packages, publishing a release |
+| [RELEASING.md](docs/RELEASING.md) | Building the per-platform archives, publishing a release |
 | [COMPILER_REQUESTS.md](docs/COMPILER_REQUESTS.md) | What the server needs from the compiler |
 | [CHANGELOG.md](CHANGELOG.md) | Changes by version |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |

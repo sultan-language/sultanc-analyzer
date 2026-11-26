@@ -1,6 +1,6 @@
 [package]
 name = "sultanc_analyzer"
-version = "0.21.0"
+version = "0.1.2"
 description = "The SultanC language server (LSP), built on the compiler's own frontend"
 license = "MIT"
 repository = "https://github.com/sultan-language/sultanc-analyzer"

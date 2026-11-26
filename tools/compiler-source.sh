@@ -78,18 +78,18 @@ compiler_executable() {
     exit 1
 }
 
-# Stops when files of the layout before 0.21 are still here (copied over by
+# Stops when files of the old sultanc-lsp layout are still here (copied over by
 # unpacking a new version onto an old folder): main.sn and the module folders
 # moved into src/, so the old copies import `sultanc_lsp.…`, which no longer
 # exists.
 check_layout() {
     stale=
     for old in main.sn analysis protocol server transport workspace tests/lsp_integration.py tests/fixtures \
-            tools/sultanc-lsp-editor.sh tools/update-compiler.sh; do
+            tools/sultanc-lsp-editor.sh tools/update-compiler.sh tools/sultanc-analyzer-editor.sh; do
         [ -e "$here/$old" ] && stale="$stale $old"
     done
     if [ -n "$stale" ]; then
-        echo "files from the layout before 0.21 (sources are in src/ now):$stale" >&2
+        echo "files from the old sultanc-lsp layout (sources are in src/ now):$stale" >&2
         echo "remove them: (cd $here && rm -rf$stale)" >&2
         exit 1
     fi

@@ -968,6 +968,38 @@ def main():
         k.request('shutdown', None); k.notify('exit', None)
     check('hover: Arabic lines isolated right to left with bidiIsolates; English unchanged', hover_bidi_isolates)
 
+    def arabic_comma_and_prelude_constructors():
+        # Arguments split at the Arabic comma `،` (U+060C) as at `,`, and a
+        # comma inside «…» is text: one parameter-name hint per argument.
+        # Completion offers the prelude constructors written bare (patterns
+        # checkpoint): `some(` / `none()` in English, `موجود(` / `لا_شيء()` in Arabic.
+        ws = tempfile.mkdtemp(prefix='sultanc-analyzer-comma-')
+        files = {'a.sn': 'عرف مساحة(ع: عدد، ط: عدد): عدد { أرجع ع * ط; }\nعرف وصف(أ: نص، ب: عدد): عدد { أرجع ب; }\n'
+                         'عرف الرئيسية(): عدد {\n    ليكن س: عدد = مساحة(2، 3);\n    ليكن ص: عدد = وصف(«أ، ب»، 4);\n    أرجع س + ص;\n}\n',
+                 'b.sn': 'عرف د(): اختياري عدد {\n    أرجع موج\n}\n',
+                 'c.sn': 'def f(): option int {\n    return so\n}\n'}
+        U = lambda n: 'file://' + os.path.join(ws, n)
+        k = Client([server], cwd=home)
+        k.request('initialize', {'processId': None, 'rootUri': 'file://' + ws, 'workspaceFolders': [{'uri': 'file://' + ws, 'name': 'w'}],
+                                 'capabilities': {}, 'initializationOptions': {'checkOnSave': False}})
+        k.notify('initialized', {})
+        for n, t in files.items():
+            open(os.path.join(ws, n), 'w', encoding='utf-8').write(t)
+            k.notify('textDocument/didOpen', {'textDocument': {'uri': U(n), 'languageId': 'sultanc', 'version': 1, 'text': t}})
+        hints = k.request('textDocument/inlayHint', {'textDocument': {'uri': U('a.sn')}, 'range': RANGE(0, 0, 8, 0)})
+        got = [(h['position']['line'], h['position']['character'], h['label']) for h in hints]
+        assert got == [(3, 24, 'ع:'), (3, 27, 'ط:'), (4, 22, 'أ:'), (4, 30, 'ب:')], got
+        def labels(n, line, ch):
+            r = k.request('textDocument/completion', {'textDocument': {'uri': U(n)}, 'position': {'line': line, 'character': ch}})
+            items = r['items'] if isinstance(r, dict) else r
+            return {i['label']: (i.get('kind'), (i.get('textEdit') or {}).get('newText')) for i in items}
+        ar = labels('b.sn', 1, 12)
+        assert ar.get('موجود') == (20, 'موجود(') and ar.get('لا_شيء') == (20, 'لا_شيء()'), ar
+        en = labels('c.sn', 1, 13)
+        assert en.get('some') == (20, 'some(') and en.get('none') == (20, 'none()'), en
+        k.request('shutdown', None); k.notify('exit', None)
+    check('Arabic comma in parameter hints; prelude constructors in completion (ar, en)', arabic_comma_and_prelude_constructors)
+
     def import_links_and_file_rename():
         # documentLink and definition on an import are the compiler's import
         # edges (علاقات_استيراد_واجهة); willRenameFiles rewrites the importers'

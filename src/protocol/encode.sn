@@ -126,7 +126,7 @@
 "documentHighlightProvider":true,
 "referencesProvider":true,
 "completionProvider":{"triggerCharacters":["."],"resolveProvider":false},
-"signatureHelpProvider":{"triggerCharacters":["(",","],"retriggerCharacters":[","]},
+"signatureHelpProvider":{"triggerCharacters":["(",",","،"],"retriggerCharacters":[",","،"]},
 "renameProvider":{"prepareProvider":true},
 "semanticTokensProvider":{"legend":{"tokenTypes":["function","type","struct","enum","enumMember","parameter","variable"],"tokenModifiers":["declaration"]},"full":{"delta":true},"range":true},
 "documentSymbolProvider":true,
@@ -142,7 +142,7 @@
 "workspaceSymbolProvider":true,
 "workspace":{"workspaceFolders":{"supported":true,"changeNotifications":true},"fileOperations":{"willRename":{"filters":[{"scheme":"file","pattern":{"glob":"**/*.sn"}}]}}}
 },
-"serverInfo":{"name":"sultanc-analyzer","version":"0.21.0"}}»;
+"serverInfo":{"name":"sultanc-analyzer","version":"0.1.2"}}»;
 }
 
 عام عرف ابن_رد_تهيئة_خادم_لغة(

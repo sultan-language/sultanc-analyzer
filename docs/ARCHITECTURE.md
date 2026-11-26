@@ -76,4 +76,4 @@ After an edit, the references request is the compiler's incremental session re-a
 
 ## Distribution
 
-The server is built per target with the compiler's own cross-compilation and linker (`tools/dist.sh`). A release bundle is laid out like a checkout (`build/sultanc-analyzer`, `library/`), so the server finds its standard library the same way in both. The VS Code extension ships one bundle per platform in platform-specific packages; see [RELEASING.md](RELEASING.md).
+The server is part of the SultanC toolchain: installed as `~/.supax/bin/sultanc-analyzer` next to the compiler, with the standard library both use in `~/.supax/lib/sultanc/library` (`tools/install.sh`). It finds that library next to itself, as the compiler does, so it runs from any directory and always analyses with the library it was built against. Release archives are built per target with the compiler's own cross-compilation and linker, in the same layout (`tools/dist.sh`, [RELEASING.md](RELEASING.md)). Editors find the installed server; the VS Code extension carries none.

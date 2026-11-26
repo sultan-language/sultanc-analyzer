@@ -49,4 +49,4 @@ check('hover: what it shows', my_feature)
 
 ## Editor tests
 
-The VS Code extension has its own unit, end-to-end and RTL editor tests in [sultanc-language-support](https://github.com/sultan-language/sultanc-language-support) (`editors/vscode`). Its end-to-end suite runs against a server build (`SULTANC_ANALYZER`, `SULTANC_HOME`) or a release bundle (`SULTANC_BUNDLE`).
+The VS Code extension has its own unit, end-to-end and RTL editor tests in [sultanc-language-support](https://github.com/sultan-language/sultanc-language-support) (`editors/vscode`). Its end-to-end suite runs against a server build (`SULTANC_ANALYZER`, `SULTANC_HOME`).

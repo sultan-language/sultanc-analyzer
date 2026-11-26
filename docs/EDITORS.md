@@ -2,29 +2,19 @@
 
 `sultanc-analyzer` is a standard Language Server Protocol server over stdio, so any
 editor with an LSP client can use it. VS Code users should install the SultanC
-extension instead (it bundles the server and adds the RTL editor, Run/Check/Build, debugging and the Test Explorer).
+extension instead (it finds the installed server and adds the RTL editor, Run/Check/Build, debugging and the Test Explorer).
 
-## 1. Get the server
+## 1. Install the server
 
-Either download the bundle for your platform from the
-[releases](https://github.com/sultan-language/sultanc-analyzer/releases) and unpack it:
-
-```sh
-tar -xzf sultanc-analyzer-<version>-<target>.tar.gz
-export SULTANC_HOME=$PWD/sultanc-analyzer-<version>-<target>    # in your shell profile
-```
-
-or build it (see the README):
+Install it into the SultanC toolchain, next to the compiler ([README](../README.md#install)):
 
 ```sh
-sultanc-analyzer/tools/build.sh                         # makes sultanc-analyzer/build/deps/sultanc/build/sultanc-analyzer
-export SULTANC_HOME=/path/to/sultanc-analyzer/build/deps/sultanc   # in your shell profile
+sultanc-analyzer/tools/install.sh /path/to/sultanc     # writes ~/.supax/bin/sultanc-analyzer
 ```
 
-Both layouts hold `build/sultanc-analyzer` and `library/`. The server must run from
-`SULTANC_HOME`, where it finds `library/`. `tools/sultanc-analyzer-editor.sh` does
-that; every setup below starts the server through it. Replace
-`/path/to/sultanc-analyzer` with where this repository is.
+`~/.supax/bin` is on `PATH` after Supax's installer, so every setup below starts
+`sultanc-analyzer` by name. The server finds its standard library next to itself
+(`~/.supax/lib/sultanc/library`), so the editor can start it from any directory.
 
 Settings are sent as `initializationOptions`; the full list is in
 [CONFIGURATION.md](CONFIGURATION.md). Commonly used:
@@ -42,7 +32,7 @@ Settings are sent as `initializationOptions`; the full list is in
 vim.filetype.add({ extension = { sn = 'sultanc' } })
 
 vim.lsp.config('sultanc', {
-  cmd = { '/path/to/sultanc-analyzer/tools/sultanc-analyzer-editor.sh' },
+  cmd = { 'sultanc-analyzer' },
   filetypes = { 'sultanc' },
   root_markers = { 'Supax.toml', '.git' },
   init_options = { language = 'auto' },
@@ -61,7 +51,7 @@ Neovim 0.10 with nvim-lspconfig:
 ```lua
 local configs = require('lspconfig.configs')
 configs.sultanc = { default_config = {
-  cmd = { '/path/to/sultanc-analyzer/tools/sultanc-analyzer-editor.sh' },
+  cmd = { 'sultanc-analyzer' },
   filetypes = { 'sultanc' },
   root_dir = require('lspconfig.util').root_pattern('Supax.toml', '.git'),
   init_options = { language = 'auto' },
@@ -75,7 +65,7 @@ require('lspconfig').sultanc.setup({})
 
 ```toml
 [language-server.sultanc-analyzer]
-command = "/path/to/sultanc-analyzer/tools/sultanc-analyzer-editor.sh"
+command = "sultanc-analyzer"
 config = { language = "auto" }
 
 [[language]]
@@ -100,7 +90,7 @@ has the full `languages.toml` (with the `[[grammar]]` entry) and the queries.
 (add-to-list 'auto-mode-alist '("\\.sn\\'" . sultanc-mode))
 (with-eval-after-load 'eglot
   (add-to-list 'eglot-server-programs
-               '(sultanc-mode . ("/path/to/sultanc-analyzer/tools/sultanc-analyzer-editor.sh"))))
+               '(sultanc-mode . ("sultanc-analyzer"))))
 (add-hook 'sultanc-mode-hook #'eglot-ensure)
 ```
 
@@ -116,7 +106,7 @@ For right-to-left Arabic lines, Emacs's bidirectional display works as is
   "clients": {
     "sultanc": {
       "enabled": true,
-      "command": ["/path/to/sultanc-analyzer/tools/sultanc-analyzer-editor.sh"],
+      "command": ["sultanc-analyzer"],
       "selector": "source.sultanc",
       "initializationOptions": { "language": "auto" }
     }

@@ -1,6 +1,6 @@
 # Compiler requests
 
-Checkpoint: **SultanC_main_20261123_final8** (2026-11-23). sultanc-analyzer 0.21.0, VS Code extension 0.15.0.
+Checkpoint: **SultanC_20261125_b28b8a6_incremental-cutoff** (2026-11-25). sultanc-analyzer 0.1.2, VS Code extension 0.15.0.
 
 Everything the editor tooling still needs from the compiler. Each item names
 the exact query or data, the reproduction, and the expected result. The LSP
@@ -9,33 +9,9 @@ answer the compiler cannot give is not offered.
 
 ## Open
 
-### S1 (Supax) — a git dependency on a package in a subdirectory of its repository
-
-The server depends on the compiler's frontend, the package `compiler` declared in `compiler/Supax.toml` of https://github.com/sultan-language/sultanc. Its `Supax.toml` names it as a git dependency, so every user builds against the same sources wherever their own checkout is:
-
-```toml
-[dependencies]
-compiler = { git = "https://github.com/sultan-language/sultanc", branch = "main" }
-```
-
-`supax build` (Supax at the `supax7` checkout, compiler final6) stops, because Supax reads only the repository's root manifest (package `sultanc`, no `[lib]`):
-
-```
-error: Supax.toml:17: dependency "compiler" is not a library: its manifest /root/.supax/git/checkouts/dab128c2b4e9c150/7c6c6ea0c7dad422a43913ebdbd5011354fa4187/Supax.toml does not declare [lib]
-```
-
-Request, either of:
-
-- **As Cargo does:** when the root manifest of a git dependency is not the package named by the dependency key, find the package of that name in the repository (`compiler/Supax.toml`, `name = "compiler"`), and give its directory as the dependency's `source_root`.
-- **Explicit:** accept `path` together with `git` as the package's directory inside the checkout: `compiler = { git = "…", branch = "main", path = "compiler" }`. The rule "a path dependency inside a git package cannot leave its repository" applies to it.
-
-Expected: the package graph has `compiler` with `source_root = ~/.supax/git/checkouts/<repo>/<rev>/compiler`; `supax build` writes `build/sultanc_analyzer`; `Supax.lock` records the repository and revision, with no local path.
-
-Until then, `tools/build.sh` and `tools/dist.sh` read the same `git` and `branch` from `Supax.toml` and fetch its head into `build/deps/sultanc`. With final6's compiler, the server built that way passes all 40 integration tests.
-
 ### C10 — Completion after `.` is empty when `;` or `)` follows on the line
 
-`رقع_مصدر_للإكمال` / `إكمال_عند_رقعة_واجهة` (final6, still on final8) give the record's fields after `name.` only when nothing but `with` or the end of the line follows. With `;` or `)` after the cursor, the list is empty: editing a field in an existing statement offers nothing.
+`رقع_مصدر_للإكمال` / `إكمال_عند_رقعة_واجهة` (final6, still on b28b8a6) give the record's fields after `name.` only when nothing but `with` or the end of the line follows. With `;` or `)` after the cursor, the list is empty: editing a field in an existing statement offers nothing.
 
 ```
 type Name = { ahmad: string, Ali: string };
@@ -57,30 +33,48 @@ def get_name(name: Name): int {
 
 Same with `int` fields and with a function that returns `string`, so it is not the expected Type. Expected: the fields in every row, ranked by the expected Type as C9; the text after the cursor (`;`, `)`, the rest of the line) does not change the context.
 
-### P2 — Incremental analysis: keep importers when a module's interface did not change
+### P2 — Early cutoff never applies to the module being edited (it is the analysis root)
 
-Measured with `compiler/` as the workspace (about 640 modules with the layered std), the package graph from `supax metadata`. Append a comment line to `compiler/frontend/parser/precedence.sn` (`didChange`), wait 1.5 s, then `textDocument/references` on `معلومة_العامل`.
-
-final5 (ownership analysis kept per state) made each edit faster, but the importers are still re-analysed:
+b28b8a6 adds early cutoff (`حلل_أجساما_في_جلسة`), and its test passes: there the edited module, `lib.sn`, is imported by the root `root.sn`. In an editor the edited document is the root of every analysis the server makes (it is declared open and analysed as the root, as the session was designed for), and `وحدة_تقبل_فحص_الأجسام` (semantic_pipeline.sn:5441–5444) refuses the root:
 
 ```
-final3: sultanc-analyzer: session 1: 6616 ms, state 2, analysed 57, reused 586, changed 1, prepared yes, full no
-final5: sultanc-analyzer: session 1: 2675 ms, state 2, analysed 57, reused 585, changed 1, prepared yes, full no
+طابق (*الحالة).شجرة_الجذر مع
+| اختياري.موجود(الشجرة) -> { إذا (الشجرة == الموضع) { أرجع خطأ; }; }
+...
+إذا (وحدة_هي_الجذر(&(*الحالة).الجذر, (*الحالة).الوحدات[الموضع].الوحدة)) { أرجع خطأ; };
 ```
 
-| | final3 | final5 | final6 |
-|---|---|---|---|
-| References after the edit (median of 4) | 7.2 s | 3.0 s | 2.6 s |
-| References, cold | 10.6 s | 9.6 s | 9.5 s |
-| Peak memory | 1.46 GB | 1.30 GB | 1.30 GB |
+So every body edit in the editor still re-analyses the edited module and all its importers.
 
-The edit changes no declaration, so no importer's result can change.
+Reproduction (the server built against b28b8a6, `SULTANC_ANALYZER_LOG=1`): `lib.sn` = `public def helper(x: int): int { return x + 1; }`, imported by `main.sn` and `other.sn`. Open `lib.sn`; references on `helper`; then change `x + 1` to `x + 2` (`didChange`), wait 1.5 s, references again; repeat.
 
-Request: in the incremental session, when a changed module's exported interface (its public declarations and their Types) is identical to the kept state's, reuse its importers' states (early cutoff, as rust-analyzer's salsa does). Expected for a comment-only or body-only edit: `analysed 1` (the document session already shows `analysed 1, reused 57, 14 ms`), and the request well under 1 s. An edit that changes a signature still re-analyses the importers.
+```
+sultanc-analyzer: session 1: 76 ms, state 1, analysed 3, reused 57, changed 1, prepared no, full no
+```
+
+With a print at each refusal in a scratch copy of the compiler, every request after an edit stops at `حلل_أجساما_من_نهائية` → `وحدة_تقبل_فحص_الأجسام` → line 5442 (`الشجرة == الموضع`). Same on `compiler/` as the workspace, editing `precedence.sn`: `analysed 61, reused 594`, references 6.3 s after each edit (5.7 s of it the session).
+
+Request: allow the early cutoff when the changed module is the root. Expected for a body-only or comment-only edit of the open document: `state 3`, `analysed 1` (the root has no importer in its own analysis; the importers that the project session adds as extra keys keep their facts, as for a non-root module), and the references request well under 1 s on `compiler/`. If something specific to the root forbids it (the entry point, its unused imports), the same check for that part only.
 
 ---
 
 ## Already delivered by the compiler and wired in the LSP
+
+- b28b8a6 incremental-cutoff (2026-11-25): builds clean; 42/42 integration
+  tests. The early cutoff itself works in the compiler's test, but not yet
+  for the edited document (P2).
+
+- 13bcb36 text-slices-views (2026-11-25): B2 fixed, a clean checkout builds
+  (`./build.sh`, 5 min). Text-slice borrow errors reach the editor at the
+  compiler's positions (`SULTANC-BORROW-REFERENCE-ESCAPE` at 9:5,
+  `SULTANC-BORROW-CONFLICT` at 16:5 in the e2e tests). 42/42 integration
+  tests, VS Code end-to-end 27/27, RTL editor 23/23.
+
+- patterns (2026-11-25): the Arabic comma `،` (COMMA_OPERATOR) and the bare
+  prelude constructors in completion (`some(`, `none()`; `موجود(`,
+  `لا_شيء()`). Wired: parameter-name hints split arguments at `،` (and skip
+  `«…»`), signature help is triggered by `،`, the tree-sitter grammar and
+  highlight queries accept it. 42/42 integration tests.
 
 - final8 (2026-11-23): the Arabic `let` is `ليكن`. The analyzer's sources,
   keyword table (regenerated from the registry), refactorings and tests use
